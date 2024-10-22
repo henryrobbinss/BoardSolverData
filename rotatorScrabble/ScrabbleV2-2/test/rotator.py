@@ -26,32 +26,45 @@ def rotate_image_and_bboxes(image_path, annotations, angle):
     # Compute the center of the image
     center = (w // 2, h // 2)
     
-    # Perform the rotation
+    # Perform the rotation on the image
     M = cv2.getRotationMatrix2D(center, angle, 1.0)
     rotated_image = cv2.warpAffine(image, M, (w, h))
     
     # Rotate the bounding boxes
     for annotation in annotations:
         x, y, width, height = annotation['coordinates'].values()
+        
+        # Compute the four corners of the bounding box
         box = np.array([
-            [x, y],
-            [x + width, y],
-            [x + width, y + height],
-            [x, y + height]
+            [x - width / 2, y - height / 2],  # top-left
+            [x + width / 2, y - height / 2],  # top-right
+            [x + width / 2, y + height / 2],  # bottom-right
+            [x - width / 2, y + height / 2]   # bottom-left
         ])
-        ones = np.ones(shape=(len(box), 1))
+        
+        # Add ones to the coordinates for affine transformation
+        ones = np.ones((box.shape[0], 1))
         points_ones = np.hstack([box, ones])
+        
+        # Apply the rotation matrix to the bounding box corners
         rotated_box = M.dot(points_ones.T).T
+        
+        # Compute the new bounding box from the rotated corners
+        min_x = rotated_box[:, 0].min()
+        max_x = rotated_box[:, 0].max()
+        min_y = rotated_box[:, 1].min()
+        max_y = rotated_box[:, 1].max()
         
         # Update the bounding box in the annotation
         annotation['coordinates'] = {
-            'x': rotated_box[:, 0].min(),
-            'y': rotated_box[:, 1].min(),
-            'width': rotated_box[:, 0].max() - rotated_box[:, 0].min(),
-            'height': rotated_box[:, 1].max() - rotated_box[:, 1].min()
+            'x': (min_x + max_x) / 2,
+            'y': (min_y + max_y) / 2,
+            'width': max_x - min_x,
+            'height': max_y - min_y
         }
     
     return rotated_image, annotations
+
 
 # Load your JSON data
 with open('_annotations.createml.json') as f:
