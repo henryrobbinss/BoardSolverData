@@ -8,8 +8,8 @@ def draw_bounding_boxes(image, annotations):
         x, y, width, height = annotation['coordinates'].values()
         label = annotation['label']
         # Draw the rectangle (bounding box) on the image
-        top_left = (int(x-(float(width)/2.0)), int(y-(float(height)/2.0)))
-        bottom_right = (int(x + (float(width)/2.0)), int(y + (float(height)/2.0)))
+        top_left = (int(x - (float(width) / 2.0)), int(y - (float(height) / 2.0)))
+        bottom_right = (int(x + (float(width) / 2.0)), int(y + (float(height) / 2.0)))
         cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
         # Put the label above the box
         cv2.putText(image, label, (int(x), int(y) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
@@ -65,7 +65,6 @@ def rotate_image_and_bboxes(image_path, annotations, angle):
     
     return rotated_image, annotations
 
-
 # Load your JSON data
 with open('_annotations.createml.json') as f:
     data = json.load(f)
@@ -77,7 +76,6 @@ for item in data:
     
     # Show the original image with bounding boxes
     image = cv2.imread(image_path)
-    print(image)
     image_with_boxes = draw_bounding_boxes(image.copy(), annotations)
     
     cv2.imshow("Original Image with Bounding Boxes", image_with_boxes)
@@ -85,24 +83,24 @@ for item in data:
     cv2.destroyAllWindows()
     
     # Manually input the rotation angle
-    angle = float(input(f"Enter rotation angle for {image_path} (e.g., 90, -90, 180): "))
+    angle = float(input(f"Enter rotation angle for {image_path} (e.g., 90, -90, 180, 0): "))
     
-    # Rotate the image and bounding boxes if necessary
-    if angle != 0:
-        rotated_image, rotated_annotations = rotate_image_and_bboxes(image_path, annotations, angle)
+    # Rotate the image and bounding boxes if necessary (always save as "rotated" even if angle is 0)
+    rotated_image, rotated_annotations = rotate_image_and_bboxes(image_path, annotations, angle)
         
-        # Show the rotated image with updated bounding boxes
-        rotated_image_with_boxes = draw_bounding_boxes(rotated_image.copy(), rotated_annotations)
-        cv2.imshow("Rotated Image with Bounding Boxes", rotated_image_with_boxes)
-        cv2.waitKey(0)  # Wait for key press to move to the next image
-        cv2.destroyAllWindows()
-        
-        output_image_path = f"rotated_{image_path}"
-        cv2.imwrite(output_image_path, rotated_image)
-        
-        # Update the annotations with the rotated bounding boxes
-        item['image'] = output_image_path
-        item['annotations'] = rotated_annotations
+    # Show the rotated image with updated bounding boxes
+    rotated_image_with_boxes = draw_bounding_boxes(rotated_image.copy(), rotated_annotations)
+    cv2.imshow("Rotated Image with Bounding Boxes", rotated_image_with_boxes)
+    cv2.waitKey(0)  # Wait for key press to move to the next image
+    cv2.destroyAllWindows()
+    
+    # Save the rotated (or copied) image and update JSON data
+    output_image_path = f"rotated_{image_path.split('/')[-1]}"
+    cv2.imwrite(output_image_path, rotated_image)
+    
+    # Update the annotations with the rotated bounding boxes
+    item['image'] = output_image_path
+    item['annotations'] = rotated_annotations
 
 # Save the updated JSON with the rotated annotations
 with open('updated_annotations.json', 'w') as f:
